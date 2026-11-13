@@ -1,0 +1,93 @@
+# Bergarako Antzokia ↔ Odoo: garapen-ingurunea.
+#
+# Erabiltzailea: edukiontziek zure erabiltzailearen UID/GID-arekin idazten dute
+# (lehenetsia 1000:1000, Ubuntun ohikoa). Bestelakoa bada, jarri .env-n UID eta GID.
+
+x-laravel: &laravel
+  build: .
+  image: antzokia-app
+  user: "${UID:-1000}:${GID:-1000}"
+  volumes:
+    - ./:/var/www/html
+  depends_on:
+    mysql:
+      condition: service_healthy
+    odoo:
+      condition: service_healthy
+
+services:
+  app:
+    <<: *laravel
+    ports:
+      - "8000:8080"
+
+  # Ilarako langilea. 3. astean aktibatzen da: docker compose --profile queue up -d
+  queue:
+    <<: *laravel
+    profiles: ["queue"]
+    command: php artisan queue:work --tries=3 --backoff=10
+
+  # Programatzailea. 4. astean aktibatzen da: docker compose --profile scheduler up -d
+  scheduler:
+    <<: *laravel
+    profiles: ["scheduler"]
+    command: php artisan schedule:work
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: "${DB_DATABASE:-antzokia}"
+      MYSQL_USER: "${DB_USERNAME:-antzokia}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-sekretua}"
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD:-sekretua}"
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-sekretua}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  odoo:
+    image: odoo:19
+    depends_on:
+      odoo-db:
+        condition: service_healthy
+    ports:
+      - "8069:8069"
+    volumes:
+      - ./odoo/odoo.conf:/etc/odoo/odoo.conf:ro
+      - odoo-data:/var/lib/odoo
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8069/web/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  odoo-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+    volumes:
+      - odoo-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Posta-zerbitzari faltsua: UI 8025 portuan, SMTP 1025 portuan. 3. astean erabiltzen da.
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+volumes:
+  mysql-data:
+  odoo-data:
+  odoo-db-data:
