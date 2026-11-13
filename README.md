@@ -86,6 +86,15 @@ Gakoa **inoiz** ez da kodean edo git-en jartzen: `.env`-n bakarrik.
 Odoo-n saioa hasita, ireki http://localhost:8069/doc. Hor modelo bakoitzaren eremuak eta metodoak
 ikus daitezke (adibidez `res.partner`).
 
+Lehen deiak curl bidez: [docs/curl-adibideak.md](docs/curl-adibideak.md).
+
+Laravel-etik (`tinker`-en):
+
+```bash
+docker compose exec app php artisan tinker
+> app(\App\Services\Odoo\OdooClient::class)->call('res.partner', 'search_read', ['domain' => [], 'fields' => ['name', 'email'], 'limit' => 5]);
+```
+
 ## Komando erabilgarriak
 
 ```bash

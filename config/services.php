@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    // Odoo-ren JSON-2 API-a. Balioak .env fitxategitik datoz (gakoa inoiz ez kodean!).
+    'odoo' => [
+        'url' => env('ODOO_URL', 'http://odoo:8069'),
+        'db' => env('ODOO_DB', 'antzokia'),
+        'key' => env('ODOO_API_KEY'),
+    ],
+
 ];

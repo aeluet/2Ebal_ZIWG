@@ -21,6 +21,8 @@ RUN sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-avail
 
 # Composer-ek bere cachea idazteko karpeta (edozein erabiltzailerekin).
 ENV COMPOSER_HOME=/tmp/composer
+# 1000 erabiltzaileak ez du etxe-karpetarik; tinker-ek (psysh) bertan idazten du.
+ENV HOME=/tmp
 
 WORKDIR /var/www/html
 EXPOSE 8080
