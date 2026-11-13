@@ -42,4 +42,13 @@ class OdooClient
             'limit' => $limit,
         ]);
     }
+
+    // Erregistro bat sortu eta bere id-a itzuli.
+    // Odoo-ren create-ek erregistro-zerrenda bat jasotzen du (vals_list) eta id-en zerrenda itzultzen du.
+    public function create(string $model, array $vals): int
+    {
+        $ids = $this->call($model, 'create', ['vals_list' => [$vals]]);
+
+        return $ids[0];
+    }
 }
